@@ -6,23 +6,24 @@ from multiprocessing import Pool
 
 def process(data):
     vocab = set()
-    for line in data:
-        # try:
-        s = line.strip("\r\n ")
-        print(s)
-        hmol = MolGraph(s)
-        # except:
-        #     print(f'fail\t{s}')
-        #     smiles = s.split('.')
-        #     hmol = [MolGraph(x) for x in smiles]
-        # if not isinstance(hmol, list):
-        #     hmol = [hmol]
-        # for hmol_ in hmol: 
-        #     for node, attr in hmol_.mol_tree.nodes(data=True):
-        #         smiles = attr['smiles']
-        #         vocab.add( attr['label'] )
-        #         for i,s in attr['inter_label']:
-        #             vocab.add( (smiles, s) )
+    for i, line in enumerate(data):
+        try:
+            s = line.strip("\r\n ")
+            # print(s)
+            hmol = MolGraph(s)
+        except Exception as e:
+            print(f'{s}')
+            # smiles = s.split('.')
+            # hmol = [MolGraph(x) for x in smiles]
+            return vocab
+        if not isinstance(hmol, list):
+            hmol = [hmol]
+        for hmol_ in hmol:
+            for node, attr in hmol_.mol_tree.nodes(data=True):
+                smiles = attr['smiles']
+                vocab.add( attr['label'] )
+                for i,s in attr['inter_label']:
+                    vocab.add( (smiles, s) )
     return vocab
 
 if __name__ == "__main__":
