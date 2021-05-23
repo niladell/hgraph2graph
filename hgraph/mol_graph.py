@@ -19,8 +19,13 @@ class MolGraph(object):
     ]
     BOND_HEURISTICS = [
         ["N", "O"],
-        ["N", "Cl"] 
-        # ["O", "Cl"] 
+        ["N", "Cl"],
+        # ["O", "Cl"],
+        ["O", "Br"],
+        ["Cl", "Br"],
+        ["N", "Br"],
+        ["N", "I"],
+        ["B", "N"]
     ]
     MAX_POS = 20
 
@@ -91,9 +96,17 @@ class MolGraph(object):
                         inter = set(clusters[c1]) & set(clusters[c2])
                         graph.add_edge(c1, c2, weight=len(inter))
 
+        # TODO The original authors use n - m as a way to evaluate whether
+        # there are any disconnected components, which should be the case
+        # for a tree. Just as a cautionary measure we check for the connected
+        # components too as an explicit check for the new ionic branch
         n, m = len(graph.nodes), len(graph.edges)
-        if n - m > 1:  # must be connected
+        connected_component = list(nx.connected_components(graph))
+        if len(connected_component) > 1:  # must be connected
             graph = self.join_separated_graphs(graph)
+            n, m = len(graph.nodes), len(graph.edges)
+            connected_component = list(nx.connected_components(graph))
+        assert n - m <= 1 and len(connected_component) == 1  # must be connected
         return graph if n - m == 1 else nx.maximum_spanning_tree(graph)
 
     def join_separated_graphs(
@@ -118,9 +131,21 @@ class MolGraph(object):
                 return [match1, match2]
 
     def get_salt_link_elements(self, ud_graph: nx.Graph):
-        if hasattr(self, 'salt_match'):
+        if hasattr(self, "salt_match"):
             return self.salt_match
         charged = self.find_charged_elements()
+        charged_set = set(charged)
+        first_component = next(nx.connected_components(ud_graph))
+        first_component_charges = len(charged_set.intersection(first_component))
+        if first_component_charges > 1:
+            charged = []
+        if len(charged) > 2:
+            if first_component_charges == 1:
+                 # TODO This works for this dataset but it is not a generic
+                 # solution
+                charged = charged[:2]
+            else:
+                charged = []
         if len(charged) == 0:
             charged = self.get_union_heuristic(ud_graph)
         self.salt_match = charged
@@ -152,11 +177,12 @@ class MolGraph(object):
                 for cluster_idx in connected_component:
                     if atom in self.clusters[cluster_idx]:
                         if lst[i] is not None:
-                            print(
-                                f"Overwiring bridge cluster from "
-                                f"{lst[i]} ({self.clusters[lst[i]]}) to "
-                                f"{cluster_idx} ({self.clusters[cluster_idx]})"
-                            )
+                            pass
+                            # print(
+                            #     f"Overwiring bridge cluster from "
+                            #     f"{lst[i]} ({self.clusters[lst[i]]}) to "
+                            #     f"{cluster_idx} ({self.clusters[cluster_idx]})"
+                            # )
                         lst[i] = cluster_idx
         graph.add_edge(*lst, weight=50)
         # TODO add '.' bond
@@ -168,7 +194,7 @@ class MolGraph(object):
             charge = atom.GetFormalCharge()
             if charge != 0:
                 charged_atoms.append(i)
-                print(atom.GetSymbol())
+                # print(atom.GetSymbol())
         return charged_atoms
 
     def label_tree(self):
@@ -258,7 +284,7 @@ class MolGraph(object):
 
         ud_graph = graph.to_undirected()
         if len(list(nx.connected_components(ud_graph))) > 1:
-            self.join_separated_graphs(graph, ud_graph)
+            graph = self.join_separated_graphs(graph, ud_graph)
 
         return graph
 
