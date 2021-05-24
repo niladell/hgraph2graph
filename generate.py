@@ -47,9 +47,13 @@ model.eval()
 torch.manual_seed(args.seed)
 random.seed(args.seed)
 
+save_smiles = []
+
 with torch.no_grad():
     for _ in tqdm(range(args.nsample // args.batch_size)):
         smiles_list = model.sample(args.batch_size, greedy=True)
         for _,smiles in enumerate(smiles_list):
-            print(smiles)
+            save_smiles.append(smiles)
 
+with open('./saved_smiles.txt', 'w') as f:
+    f.write('\n'.join(save_smiles))
