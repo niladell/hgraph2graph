@@ -4,8 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 from torch.utils.data import DataLoader
-
-import datamol as dm
+from valence.utils.sascorer import calculateScore as synth_score
 
 import rdkit
 from rdkit import Chem, DataStructs
@@ -58,7 +57,7 @@ class PredictorModel(object):
                 continue
             try:
                 # Check wheter it has any known scaffolds
-                has_scaffold = self.check_scaffolds(smiles)
+                has_scaffold = self.check_scaffolds(mol)
                 if not has_scaffold:
                     discarded_mols.append(i)
                     continue
