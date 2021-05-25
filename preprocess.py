@@ -9,6 +9,14 @@ import numpy
 from hgraph import MolGraph, common_atom_vocab, PairVocab
 import rdkit
 
+# In all honesty I haven't foudn the root cause yet
+# TODO [As] sepcifically was breaking the HierVAE model
+# (or more specifically not getting registed during the motif
+# creation process). I am still looking into it, so for now we will
+# skip this particular molecule that seems to be breaking. The rest
+# of the molecules seem to be working alright.
+BREAKING_SMILES = set(['C1=CC(=CC=C1N)[As](=O)(C2=CC=C(C=C2)N)O'])
+
 def to_numpy(tensors):
     convert = lambda x : x.numpy() if type(x) is torch.Tensor else x
     a,b,c = tensors
@@ -99,6 +107,7 @@ if __name__ == "__main__":
         with open(args.train) as f:
             data = [line.strip("\r\n ").split()[0] for line in f]
 
+        data = [d for d in data if d not in BREAKING_SMILES]
         random.shuffle(data)
 
         batches = [data[i : i + args.batch_size] for i in range(0, len(data), args.batch_size)]
