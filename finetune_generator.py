@@ -10,6 +10,7 @@ import datamol as dm
 import rdkit
 from rdkit import Chem, DataStructs
 from rdkit.Chem import AllChem
+from rdkit.Chem import QED
 
 import math, random, sys
 import numpy as np
@@ -48,35 +49,45 @@ class PredictorModel(object):
         self.set_vocab = list(set(self.vocab))
 
     def predict(self, smiles_list: List[str]):
-        failed_smiles = []
+        discarded_mols = []
         preds = len(smiles_list) * [0.0]
         for i, smiles in enumerate(smiles_list):
-            mol = dm.to_mol(smiles)
+            mol = Chem.MolFromSmiles(smiles)
             if mol is None:
-                failed_smiles.append(i)
+                discarded_mols.append(i)
                 continue
             try:
                 # Check wheter it has any known scaffolds
                 has_scaffold = self.check_scaffolds(smiles)
                 if not has_scaffold:
-                    failed_smiles.append(i)
+                    discarded_mols.append(i)
+                    continue
+                drug_like = self.drug_likeness(mol)
+                synthetizable = self.synthetizability(mol)
+                if not drug_like or not synthetizable:
+                    discarded_mols.append(i)
                     continue
 
                 tokens = self.tokenizer("[CLS]" + smiles + "[SEP]")
                 tokens = tokens.to(self.device).unsqueeze(0)
                 preds[i] = self.activation(self.model(tokens, None)).item()
             except KeyError:
-                failed_smiles.append(i)
+                discarded_mols.append(i)
         return preds
 
-    def check_scaffolds(self, smiles):
-        m = Chem.MolFromSmiles(smiles)
-        if m is None:
+    def drug_likeness(self, mol):
+        return QED.qed(mol) > .6
+
+    def synthetizability(self, mol):
+        return synth_score(mol < 4)
+
+    def check_scaffolds(self, mol):
+        if mol is None:
             return False
         checks = []
         for s in self.set_vocab:
             patt = Chem.MolFromSmiles(s)
-            checks.append(m.HasSubstructMatch(patt))
+            checks.append(mol.HasSubstructMatch(patt))
         return any(checks)
 
 
