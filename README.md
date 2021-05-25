@@ -1,5 +1,20 @@
 # Hierarchical Generation of Molecular Graphs using Structural Motifs
 
+This is an adaptation of the original code for the hierarchical generation
+of molecular grapgs using structural motifs (HierVAE).
+
+The main steps on how to run this code are described in the readme
+in [https://github.com/niladell/valence_challenge](https://github.com/niladell/valence_challenge)
+
+The following text is the original content of the README, it is **NOT** part
+of the instructions or submsission for the challenge. It has been left here for
+context.
+
+
+
+## (ORINGINAL README) Hierarchical Generation of Molecular Graphs using Structural Motifs
+
+
 Our paper is at https://arxiv.org/pdf/2002.03230.pdf
 
 ## Installation
