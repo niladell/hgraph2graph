@@ -78,7 +78,7 @@ class PredictorModel(object):
         return QED.qed(mol) > .6
 
     def synthetizability(self, mol):
-        return synth_score(mol < 4)
+        return synth_score(mol) < 4
 
     def check_scaffolds(self, mol):
         if mol is None:
